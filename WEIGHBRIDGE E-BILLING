@@ -1,0 +1,254 @@
+from tkinter import *
+from tkinter import messagebox
+import random
+import subprocess
+import tempfile
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+
+class Bill_App:
+    def __init__(self, t):
+        self.t = t
+        self.t.resizable(0, 0)
+        self.t.geometry("1350x700+90+70")
+        self.t.title("Weighbridge Billing System")
+
+        # Variables
+        self.empty_truck_weight = DoubleVar()
+        self.loaded_truck_weight = DoubleVar()
+        self.total_price = DoubleVar()
+        self.bill_number = StringVar()
+        self.truck_number = StringVar()
+
+        self.bill_number.set(str(random.randint(1000, 9999)))
+
+        # Customer Detail
+        self.customer_name = StringVar()
+        self.customer_phone = StringVar()
+        self.customer_email = StringVar()
+
+        # Product Detail
+        self.product_sender = StringVar()
+        self.product_receiver = StringVar()
+
+        # GUI Components
+        # Customer Details
+        customer_frame = LabelFrame(self.t, text="Customer Details", bd=7, relief=GROOVE, bg="#074463", fg="gold",
+                                    font=("times new roman", 15, "bold"))
+        customer_frame.place(x=0, y=80, relwidth=1)
+
+        Label(customer_frame, text="Customer Name", bg="#074463", fg="white",
+              font=("times new roman", 18, "bold")).grid(row=0, column=0, padx=20, pady=5)
+        Entry(customer_frame, width=15, font="arial 15", bd=7, relief=SUNKEN,
+              textvariable=self.customer_name).grid(row=0, column=1, padx=10, pady=5)
+        Label(customer_frame, text="Phone No", bg="#074463", fg="white",
+              font=("times new roman", 18, "bold")).grid(row=0, column=2, padx=20, pady=5)
+        Entry(customer_frame, width=15, font="arial 15", bd=7, relief=SUNKEN,
+              textvariable=self.customer_phone).grid(row=0, column=3, padx=10, pady=5)
+        Label(customer_frame, text="Email", bg="#074463", fg="white",
+              font=("times new roman", 18, "bold")).grid(row=0, column=4, padx=20, pady=5)
+        Entry(customer_frame, width=15, font="arial 15", bd=7, relief=SUNKEN,
+              textvariable=self.customer_email).grid(row=0, column=5,padx=10, pady=5)
+        Label(customer_frame, text="Truck No", bg="#074463", fg="white",
+              font=("times new roman", 18, "bold")).grid(row=0, column=6, padx=20, pady=5)
+        Entry(customer_frame, width=15, font="arial 15", bd=7, relief=SUNKEN,
+              textvariable=self.truck_number).grid(row=0, column=7,padx=10, pady=5)
+
+        # Product Details
+        product_frame = LabelFrame(self.t, text="Product Details", bd=7, relief=GROOVE, bg="#074463", fg="gold",
+                                   font=("times new roman", 15, "bold"))
+        product_frame.place(x=5, y=170, width=425, height=380)
+
+        Label(product_frame, text="Sender Name", bg="#074463", fg="lightgreen",
+              font=("times new roman", 16, "bold")).grid(row=0, column=0, padx=10, pady=10, sticky="w")
+        Entry(product_frame, width=15, font="arial 16", bd=5, relief=SUNKEN,
+              textvariable=self.product_sender).grid(row=0, column=1, padx=10, pady=10)
+
+        Label(product_frame, text="Receiver Name", bg="#074463", fg="lightgreen",
+              font=("times new roman", 16, "bold")).grid(row=1, column=0, padx=10, pady=10, sticky="w")
+        Entry(product_frame, width=15, font="arial 16", bd=5, relief=SUNKEN,
+              textvariable=self.product_receiver).grid(row=1, column=1, padx=10, pady=10)
+
+        Label(product_frame, text="Empty Truck Weight", bg="#074463", fg="lightgreen",
+              font=("times new roman", 16, "bold")).grid(row=2, column=0, padx=10, pady=10, sticky="w")
+        Entry(product_frame, width=15, font="arial 16", bd=5, relief=SUNKEN,
+              textvariable=self.empty_truck_weight).grid(row=2, column=1, padx=10, pady=10)
+
+        Label(product_frame, text="Loaded Truck Weight", bg="#074463", fg="lightgreen",
+              font=("times new roman", 16, "bold")).grid(row=3, column=0, padx=10, pady=10, sticky="w")
+        Entry(product_frame, width=15, font="arial 16", bd=5, relief=SUNKEN,
+              textvariable=self.loaded_truck_weight).grid(row=3, column=1, padx=10, pady=10)
+
+        # Bill Area
+        bill_frame = Frame(self.t, bd=10, relief=GROOVE)
+        bill_frame.place(x=450, y=170, width=850, height=380)
+        Label(bill_frame, text="Bill Area", bd=7, relief=GROOVE, font=("arial", 15, "bold")).pack(fill=X)
+
+        self.txtarea = Text(bill_frame)
+        self.txtarea.pack(fill=BOTH, expand=1)
+
+        # Bill Menu
+        bill_menu_frame = LabelFrame(self.t, text="Bill Menu", bd=7, relief=GROOVE, bg="#074463", fg="gold",
+                                     font=("times new roman", 15, "bold"))
+        bill_menu_frame.place(x=0, y=555, relwidth=1, height=145)
+
+        Button(bill_menu_frame, text="Total", bg="cadetblue", fg="white", pady=15, width=10, bd=2,
+               font="arial 15 bold", command=self.total).grid(row=0, column=0, padx=5, pady=5)
+        Button(bill_menu_frame, text="Generate Bill", bg="cadetblue", fg="white", pady=15, width=10, bd=2,
+               font="arial 15 bold", command=self.bill_area).grid(row=0, column=1, padx=5, pady=5)
+        Button(bill_menu_frame, text="Clear", bg="cadetblue", fg="white", pady=15, width=10, bd=2,
+               font="arial 15 bold", command=self.clear).grid(row=0, column=2, padx=5, pady=5)
+        Button(bill_menu_frame, text="Print Bill", bg="cadetblue", fg="white", pady=15, width=10, bd=2,
+               font="arial 15 bold", command=self.print_bill).grid(row=0, column=3, padx=5, pady=5)
+        Button(bill_menu_frame, text="Exit", bg="cadetblue", fg="white", pady=15, width=10, bd=2,
+               font="arial 15 bold", command=self.exit).grid(row=0, column=4, padx=5, pady=5)
+
+        self.welcome()
+
+    def total(self):
+        empty_weight = self.empty_truck_weight.get()
+        loaded_weight = self.loaded_truck_weight.get()
+        weight_difference = loaded_weight - empty_weight
+
+        if weight_difference <= 0:
+            self.total_price.set(90)  
+        else:
+            self.total_price.set(200)  
+
+    def send_email(self, email):
+        try:
+            from_address = "achyuthvenkat07@gmail.com"  
+            to_address = email
+            subject = "Your Bill"
+            body = "Please find attached your bill."
+
+            # Email configuration
+            msg = MIMEMultipart()
+            msg['From'] = from_address
+            msg['To'] = to_address
+            msg['Subject'] = subject
+
+            # Attach bill
+            attachment = self.save_bill_to_temp_file()
+            with open(attachment, "rb") as attachment_file:
+                part = MIMEBase('application', 'octet-stream')
+                part.set_payload(attachment_file.read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', f"attachment; filename= {attachment}")
+            msg.attach(part)
+
+            # Add body to email
+            msg.attach(MIMEText(body, 'plain'))
+
+            # Establish a connection with Gmail's SMTP server
+            server = smtplib.SMTP('smtp.gmail.com', 587)
+            server.starttls()
+
+            # Login to your Gmail account
+            server.login(from_address, "icjw rwfh cpjm trxh")  
+
+            # Send the email
+            server.send_message(msg)
+
+            # Quit the server
+            server.quit()
+
+            messagebox.showinfo("Success", "Email sent successfully.")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred while sending the email: {e}")
+
+    def save_bill_to_temp_file(self):
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.txt') as tmp_file:
+                tmp_file.write(self.txtarea.get("1.0", END).encode('utf-8'))
+                return tmp_file.name
+
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred while saving the bill: {e}")
+
+    def bill_area(self):
+        self.txtarea.delete('1.0', END)
+        self.txtarea.insert(END, "\tWeighbridge Billing System\n")
+        self.txtarea.insert(END, f"Bill Number: {self.bill_number.get()}\n")
+        self.txtarea.insert(END, f"Customer Name: {self.customer_name.get()}\n")
+        self.txtarea.insert(END, f"Customer Phone: {self.customer_phone.get()}\n")
+        self.txtarea.insert(END, f"Truck Number: {self.truck_number.get()}\n")
+        self.txtarea.insert(END, f"Sender Name: {self.product_sender.get()}\n")
+        self.txtarea.insert(END, f"Receiver Name: {self.product_receiver.get()}\n")
+        self.txtarea.insert(END, f"-----------------------------------------\n")
+        empty_truck_weight = self.empty_truck_weight.get()
+        loaded_truck_weight = self.loaded_truck_weight.get()
+        product_weight = loaded_truck_weight - empty_truck_weight
+        self.txtarea.insert(END, f"Product Weight: {product_weight} Kg\n")
+        
+        # Calculate and display price for empty truck weight
+        empty_truck_price = 90
+        if empty_truck_weight > 7000:
+            additional_charge = ((empty_truck_weight - 7000) // 1000) * 10
+            empty_truck_price += additional_charge
+        self.txtarea.insert(END, f"Price for Empty Truck Weight: Rs. {empty_truck_price}\n")
+        
+        # Calculate and display price for loaded truck weight
+        loaded_truck_price = 200
+        if loaded_truck_weight > 22000:
+            additional_charge = ((loaded_truck_weight - 22000) // 1000) * 42
+            loaded_truck_price += additional_charge
+        self.txtarea.insert(END, f"Price for Loaded Truck Weight: Rs. {loaded_truck_price}\n")
+        
+        self.txtarea.insert(END, f"Empty Truck Weight: {empty_truck_weight} Kg\n")
+        self.txtarea.insert(END, f"Loaded Truck Weight: {loaded_truck_weight} Kg\n")
+        
+        # After creating the bill text, you can send it via email
+        email = self.customer_email.get()
+        if email:
+            self.send_email(email)
+        else:
+            messagebox.showerror("Error", "Please enter your email address.")
+
+    def welcome(self):
+        self.txtarea.delete('1.0', END)
+        self.txtarea.insert(END, "\tWeighbridge Billing System\n")
+        self.txtarea.insert(END, f"Bill Number: {self.bill_number.get()}\n")
+        self.txtarea.insert(END, f"Customer Name: {self.customer_name.get()}\n")
+        self.txtarea.insert(END, f"Customer Phone: {self.customer_phone.get()}\n")
+        self.txtarea.insert(END, f"Truck Number: {self.truck_number.get()}\n")
+        self.txtarea.insert(END, f"-----------------------------------------\n")
+        
+
+    def clear(self):
+        self.empty_truck_weight.set(0)
+        self.loaded_truck_weight.set(0)
+        self.total_price.set(0)
+        self.customer_name.set("")
+        self.customer_phone.set("")
+        self.txtarea.delete('1.0', END)
+        self.bill_number.set(str(random.randint(1000, 9999)))
+        self.truck_number.set("")
+        self.product_sender.set("")
+        self.product_receiver.set("")
+        self.customer_email.set("")
+
+    def print_bill(self):
+        try:
+            # Create a temporary file to store the bill text
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.txt') as tmp_file:
+                tmp_file.write(self.txtarea.get("1.0", END).encode('utf-8'))
+
+            # Open the temporary file using the default text editor for printing
+            subprocess.Popen(['notepad.exe', '/p', tmp_file.name], shell=True)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred while printing the bill: {e}")
+
+    def exit(self):
+        op = messagebox.askyesno("Exit", "Do you really want to exit?")
+        if op > 0:
+            self.t.destroy()
+
+root = Tk()
+obj = Bill_App(root)
+root.mainloop()
