@@ -120,7 +120,7 @@ class Bill_App:
 
     def send_email(self, email):
         try:
-            from_address = "achyuthvenkat07@gmail.com"  
+            from_address = "your_email@gmail.com"     # Enter your email adderess  
             to_address = email
             subject = "Your Bill"
             body = "Please find attached your bill."
@@ -148,7 +148,7 @@ class Bill_App:
             server.starttls()
 
             # Login to your Gmail account
-            server.login(from_address, "icjw rwfh cpjm trxh")  
+            server.login(from_address, "your_app_password")             # enter your app password  
 
             # Send the email
             server.send_message(msg)
